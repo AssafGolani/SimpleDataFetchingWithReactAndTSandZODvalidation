@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
+import { z } from "zod";
 import { get } from "./util/http";
 import BlogPosts, { BlogPost } from "./components/BlogPosts";
 import fetchingImg from "./assets/data-fetching.png";
@@ -14,17 +15,23 @@ function App() {
 
   useEffect(() => {
     async function fetchData() {
-      const data = await get<RawDataBlogPost[]>(
-        "https://jsonplaceholder.typicode.com/posts"
+      const rawDataBlogPostSchema = z.object({
+        id: z.number(),
+        userId: z.number(),
+        title: z.string(),
+        body: z.string(),
+      });
+
+      const data = await get(
+        "https://jsonplaceholder.typicode.com/posts",
+        z.array(rawDataBlogPostSchema)
       );
 
-      const blogPosts: BlogPost[] = data.map((rawPost) => {
-        return {
-          id: rawPost.id,
-          title: rawPost.title,
-          text: rawPost.body,
-        };
-      });
+      const blogPosts: BlogPost[] = data.map((post) => ({
+        id: post.id,
+        title: post.title,
+        text: post.body,
+      }));
 
       setFetchedPosts(blogPosts);
     }
